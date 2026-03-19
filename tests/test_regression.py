@@ -27,15 +27,19 @@ class RegressionTest(unittest.TestCase):
 
             self.assertTrue(output_path.exists())
             raw = output_path.read_bytes()
-            self.assertEqual(len(raw), 112)
             n = struct.unpack("<H", raw[:2])[0]
             self.assertEqual(n, 10)
+            upper_count = n * (n + 1) // 2
+            expected_size = 2 + upper_count * 2
+            self.assertEqual(len(raw), expected_size)
 
-            upper = struct.unpack("<55H", raw[2:])
+            upper = struct.unpack(f"<{upper_count}H", raw[2:])
             matrix = [[0 for _ in range(n)] for _ in range(n)]
             idx = 0
             for i in range(n):
-                for j in range(i, n):
+                matrix[i][i] = upper[idx]
+                idx += 1
+                for j in range(i + 1, n):
                     matrix[i][j] = upper[idx]
                     matrix[j][i] = upper[idx]
                     idx += 1
