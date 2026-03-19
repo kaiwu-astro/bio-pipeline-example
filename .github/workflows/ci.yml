@@ -3,6 +3,9 @@ name: CI
 on:
   push:
 
+permissions:
+  contents: read
+
 jobs:
   regression-test:
     runs-on: ubuntu-latest
