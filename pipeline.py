@@ -30,14 +30,14 @@ def distances_matrix(sequences: list[str]) -> np.ndarray:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("dataset")
+    parser.add_argument("dataset", help="Path to aligned sequence dataset file.")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
     with open(args.dataset, "r") as f:
-        sequences = f.readlines()
+        sequences = [line.strip() for line in f if line.strip()]
     distances = distances_matrix(sequences)
     print(distances)
 
