@@ -1,4 +1,7 @@
+import argparse
+
 import numpy as np
+
 
 def distance(seq1: str, seq2: str) -> int:
     """Calculate the distance between two strings.
@@ -18,16 +21,23 @@ def distance(seq1: str, seq2: str) -> int:
 def distances_matrix(sequences: list[str]) -> np.ndarray:
     """Calculate the matrix of distances between each pair of lines."""
     n = len(sequences)
-    distances = np.zeros((n,n))
+    distances = np.zeros((n, n))
     for i, seq1 in enumerate(sequences):
         for j, seq2 in enumerate(sequences):
-            distances[i,j] = distance(seq1, seq2)
+            distances[i, j] = distance(seq1, seq2)
     return distances
 
 
-def main():
-    with open("dataset.txt", "r") as f:
-        sequences = f.readlines()
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("dataset", help="Path to aligned sequence dataset file.")
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
+    with open(args.dataset, "r") as f:
+        sequences = [line.strip() for line in f if line.strip()]
     distances = distances_matrix(sequences)
     print(distances)
 

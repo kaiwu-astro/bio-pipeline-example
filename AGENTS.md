@@ -5,14 +5,14 @@
 This repository is a minimal bioinformatics example pipeline implemented in Python.
 
 - `pipeline.py`: computes pairwise sequence distances and prints a distance matrix.
-- `dataset.txt`: aligned sequence input consumed by `pipeline.py`.
+- `example/dataset.txt`: aligned sequence input consumed by `pipeline.py`.
 
 ## How to run
 
 From the repository root:
 
 ```bash
-python pipeline.py
+python pipeline.py example/dataset.txt
 ```
 
 If `numpy` is not installed in your environment:
@@ -23,15 +23,16 @@ pip install numpy
 
 ## Linting, build, and tests
 
-There are currently no configured lint, build, or automated test commands in this repository.
+There are currently no configured lint or build commands in this repository.
 
 When validating changes, run:
 
 ```bash
-python pipeline.py
+python pipeline.py example/dataset.txt
+python -m unittest discover -s tests
 ```
 
-and confirm it executes successfully and prints a matrix.
+and confirm both commands execute successfully.
 
 ## Change guidelines for agents
 
