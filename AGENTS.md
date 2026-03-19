@@ -4,7 +4,7 @@
 
 This repository is a minimal bioinformatics example pipeline implemented in Python.
 
-- `pipeline.py`: computes pairwise sequence distances and prints a distance matrix.
+- `pipeline.py`: computes pairwise sequence distances and writes them to disk.
 - `example/dataset.txt`: aligned sequence input consumed by `pipeline.py`.
 
 ## How to run
@@ -13,12 +13,6 @@ From the repository root:
 
 ```bash
 python pipeline.py example/dataset.txt
-```
-
-If `numpy` is not installed in your environment:
-
-```bash
-pip install numpy
 ```
 
 ## Linting, build, and tests
