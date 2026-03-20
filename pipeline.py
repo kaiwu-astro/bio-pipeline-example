@@ -28,7 +28,8 @@ def _distances_matrix_kernel(encoded_sequences: np.ndarray) -> np.ndarray:
         for j in range(i, n):
             distance = _pairwise_distance(encoded_sequences, i, j, sequence_length, gap)
             distances[i, j] = distance
-            distances[j, i] = distance
+            if i != j:
+                distances[j, i] = distance
     return distances
 
 
@@ -88,8 +89,7 @@ def write_distances_matrix_to_disk(sequences: list[str], output_path: str) -> No
     for i in range(n):
         upper_row = _distance_row_kernel(encoded_sequences, i, i)
         matrix[i, i:] = upper_row
-        for offset in range(1, len(upper_row)):
-            matrix[i + offset, i] = upper_row[offset]
+        matrix[i + 1 : i + len(upper_row), i] = upper_row[1:]
     matrix.flush()
 
 
