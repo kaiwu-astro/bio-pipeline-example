@@ -6,6 +6,18 @@ import numpy as np
 MAX_SEQUENCE_LENGTH = 65530
 
 
+def _validate_sequence_lengths(sequences: list[str]) -> int:
+    sequence_length = len(sequences[0])
+    if sequence_length > MAX_SEQUENCE_LENGTH:
+        raise ValueError(
+            f"Sequence length {sequence_length} exceeds maximum supported length {MAX_SEQUENCE_LENGTH}."
+        )
+    for sequence in sequences:
+        if len(sequence) != sequence_length:
+            raise ValueError("All sequences must have the same length.")
+    return sequence_length
+
+
 @njit(cache=True)
 def _distances_matrix_kernel(encoded_sequences: np.ndarray) -> np.ndarray:
     n, sequence_length = encoded_sequences.shape
@@ -46,11 +58,7 @@ def distances_matrix(sequences: list[str]) -> np.ndarray:
     if n == 0:
         return np.zeros((0, 0))
 
-    sequence_length = len(sequences[0])
-    if sequence_length > MAX_SEQUENCE_LENGTH:
-        raise ValueError(f"Sequence length {sequence_length} exceeds maximum supported length {MAX_SEQUENCE_LENGTH}.")
-    for sequence in sequences:
-        assert len(sequence) == sequence_length
+    sequence_length = _validate_sequence_lengths(sequences)
 
     encoded_sequences = np.zeros((n, sequence_length), dtype=np.uint8)
     for i, sequence in enumerate(sequences):
@@ -67,11 +75,7 @@ def write_distances_matrix_to_disk(sequences: list[str], output_path: str) -> No
         matrix.flush()
         return
 
-    sequence_length = len(sequences[0])
-    if sequence_length > MAX_SEQUENCE_LENGTH:
-        raise ValueError(f"Sequence length {sequence_length} exceeds maximum supported length {MAX_SEQUENCE_LENGTH}.")
-    for sequence in sequences:
-        assert len(sequence) == sequence_length
+    sequence_length = _validate_sequence_lengths(sequences)
 
     encoded_sequences = np.zeros((n, sequence_length), dtype=np.uint8)
     for i, sequence in enumerate(sequences):
