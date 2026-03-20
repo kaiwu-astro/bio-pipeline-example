@@ -6,7 +6,12 @@ import unittest
 
 import numpy as np
 
-from pipeline import MAX_SEQUENCE_LENGTH, distances_matrix, write_distances_matrix_to_disk
+from pipeline import (
+    MAX_SEQUENCE_LENGTH,
+    _distance_row_kernel,
+    distances_matrix,
+    write_distances_matrix_to_disk,
+)
 
 
 class RegressionTest(unittest.TestCase):
@@ -68,6 +73,22 @@ class RegressionTest(unittest.TestCase):
         )
         np.testing.assert_array_equal(result, expected)
         np.testing.assert_array_equal(result, result.T)
+
+    def test_distance_row_kernel_computes_upper_triangle_slice(self):
+        sequences = ["AAA", "AAT", "ATT"]
+        encoded_sequences = np.array(
+            [np.frombuffer(sequence.encode("ascii"), dtype=np.uint8) for sequence in sequences],
+            dtype=np.uint8,
+        )
+
+        row0 = _distance_row_kernel(encoded_sequences, 0, 0)
+        np.testing.assert_array_equal(row0, np.array([0, 1, 2], dtype=np.uint16))
+
+        row1 = _distance_row_kernel(encoded_sequences, 1, 1)
+        np.testing.assert_array_equal(row1, np.array([0, 1], dtype=np.uint16))
+
+        row2 = _distance_row_kernel(encoded_sequences, 2, 2)
+        np.testing.assert_array_equal(row2, np.array([0], dtype=np.uint16))
 
     def test_pipeline_fails_when_sequence_too_long(self):
         repo_root = Path(__file__).resolve().parents[1]
