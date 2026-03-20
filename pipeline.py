@@ -89,7 +89,8 @@ def write_distances_matrix_to_disk(sequences: list[str], output_path: str) -> No
     for i in range(n):
         upper_row = _distance_row_kernel(encoded_sequences, i, i)
         matrix[i, i:] = upper_row
-        matrix[i + 1 :, i] = upper_row[1:]
+        if i < n - 1:
+            matrix[i + 1 :, i] = upper_row[1:]
     matrix.flush()
 
 
