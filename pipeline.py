@@ -25,19 +25,22 @@ def _distances_matrix_kernel(encoded_sequences: np.ndarray) -> np.ndarray:
     gap = ord("-")
 
     for i in range(n):
-        for j in range(n):
-            distances[i, j] = _pairwise_distance(encoded_sequences, i, j, sequence_length, gap)
+        for j in range(i, n):
+            distance = _pairwise_distance(encoded_sequences, i, j, sequence_length, gap)
+            distances[i, j] = distance
+            distances[j, i] = distance
     return distances
 
 
 @njit(cache=True)
-def _distance_row_kernel(encoded_sequences: np.ndarray, i: int) -> np.ndarray:
+def _distance_row_kernel(encoded_sequences: np.ndarray, i: int, start_j: int) -> np.ndarray:
     n, sequence_length = encoded_sequences.shape
-    distances = np.zeros(n, dtype=np.uint16)
+    distances = np.zeros(n - start_j, dtype=np.uint16)
     gap = ord("-")
 
-    for j in range(n):
-        distances[j] = _pairwise_distance(encoded_sequences, i, j, sequence_length, gap)
+    for offset in range(n - start_j):
+        j = start_j + offset
+        distances[offset] = _pairwise_distance(encoded_sequences, i, j, sequence_length, gap)
     return distances
 
 
@@ -83,7 +86,10 @@ def write_distances_matrix_to_disk(sequences: list[str], output_path: str) -> No
 
     matrix = np.lib.format.open_memmap(output_path, mode="w+", dtype=np.uint16, shape=(n, n))
     for i in range(n):
-        matrix[i, :] = _distance_row_kernel(encoded_sequences, i)
+        upper_row = _distance_row_kernel(encoded_sequences, i, i)
+        matrix[i, i:] = upper_row
+        for offset in range(len(upper_row)):
+            matrix[i + offset, i] = upper_row[offset]
     matrix.flush()
 
 
