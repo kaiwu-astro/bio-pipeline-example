@@ -81,9 +81,14 @@ class RegressionTest(unittest.TestCase):
             dtype=np.uint8,
         )
 
-        result = _distance_row_kernel(encoded_sequences, 1, 1)
-        expected = np.array([0, 1], dtype=np.uint16)
-        np.testing.assert_array_equal(result, expected)
+        row0 = _distance_row_kernel(encoded_sequences, 0, 0)
+        np.testing.assert_array_equal(row0, np.array([0, 1, 2], dtype=np.uint16))
+
+        row1 = _distance_row_kernel(encoded_sequences, 1, 1)
+        np.testing.assert_array_equal(row1, np.array([0, 1], dtype=np.uint16))
+
+        row2 = _distance_row_kernel(encoded_sequences, 2, 2)
+        np.testing.assert_array_equal(row2, np.array([0], dtype=np.uint16))
 
     def test_pipeline_fails_when_sequence_too_long(self):
         repo_root = Path(__file__).resolve().parents[1]
