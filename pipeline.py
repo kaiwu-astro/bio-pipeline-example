@@ -1,31 +1,42 @@
 import argparse
 
+from numba import njit
 import numpy as np
 
 
-def distance(seq1: str, seq2: str) -> int:
-    """Calculate the distance between two strings.
+@njit(cache=True)
+def _distances_matrix_kernel(encoded_sequences: np.ndarray) -> np.ndarray:
+    n, sequence_length = encoded_sequences.shape
+    distances = np.zeros((n, n), dtype=np.float64)
+    gap = ord("-")
 
-    The distance is calculated by comparing each character in the two strings.
-    If the characters are the same, or if either character is '-', then the distance is 0.
-    Otherwise, the distance is 1.
-    """
-    assert len(seq1) == len(seq2)
-    dist = 0
-    for c1, c2 in zip(seq1, seq2):
-        if c1 != '-' and c2 != '-' and c1 != c2:
-            dist += 1
-    return dist
+    for i in range(n):
+        for j in range(n):
+            dist = 0
+            for k in range(sequence_length):
+                c1 = encoded_sequences[i, k]
+                c2 = encoded_sequences[j, k]
+                if c1 != gap and c2 != gap and c1 != c2:
+                    dist += 1
+            distances[i, j] = dist
+    return distances
 
 
 def distances_matrix(sequences: list[str]) -> np.ndarray:
     """Calculate the matrix of distances between each pair of lines."""
     n = len(sequences)
-    distances = np.zeros((n, n))
-    for i, seq1 in enumerate(sequences):
-        for j, seq2 in enumerate(sequences):
-            distances[i, j] = distance(seq1, seq2)
-    return distances
+    if n == 0:
+        return np.zeros((0, 0))
+
+    sequence_length = len(sequences[0])
+    for sequence in sequences:
+        assert len(sequence) == sequence_length
+
+    encoded_sequences = np.zeros((n, sequence_length), dtype=np.uint8)
+    for i, sequence in enumerate(sequences):
+        encoded_sequences[i, :] = np.frombuffer(sequence.encode("ascii"), dtype=np.uint8)
+
+    return _distances_matrix_kernel(encoded_sequences)
 
 
 def parse_args() -> argparse.Namespace:

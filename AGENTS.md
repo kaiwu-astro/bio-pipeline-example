@@ -15,10 +15,10 @@ From the repository root:
 python pipeline.py example/dataset.txt
 ```
 
-If `numpy` is not installed in your environment:
+If dependencies are not installed in your environment:
 
 ```bash
-pip install numpy
+pip install -r requirements.txt
 ```
 
 ## Linting, build, and tests
