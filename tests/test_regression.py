@@ -6,7 +6,7 @@ import unittest
 
 import numpy as np
 
-from pipeline import distances_matrix, write_distances_matrix_to_disk
+from pipeline import MAX_SEQUENCE_LENGTH, distances_matrix, write_distances_matrix_to_disk
 
 
 class RegressionTest(unittest.TestCase):
@@ -68,6 +68,32 @@ class RegressionTest(unittest.TestCase):
         )
         np.testing.assert_array_equal(result, expected)
         np.testing.assert_array_equal(result, result.T)
+
+    def test_pipeline_fails_when_sequence_too_long(self):
+        repo_root = Path(__file__).resolve().parents[1]
+        long_sequence = "A" * (MAX_SEQUENCE_LENGTH + 1)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            dataset_path = Path(tmpdir) / "too_long_dataset.txt"
+            dataset_path.write_text(f"{long_sequence}\n{long_sequence}\n")
+            output_path = Path(tmpdir) / "distances.npy"
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(repo_root / "pipeline.py"),
+                    str(dataset_path),
+                    "--output",
+                    str(output_path),
+                ],
+                capture_output=True,
+                text=True,
+            )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(
+            f"exceeds maximum supported length {MAX_SEQUENCE_LENGTH}",
+            result.stderr,
+        )
 
 
 if __name__ == "__main__":

@@ -3,6 +3,8 @@ import argparse
 from numba import njit
 import numpy as np
 
+MAX_SEQUENCE_LENGTH = 65530
+
 
 @njit(cache=True)
 def _distances_matrix_kernel(encoded_sequences: np.ndarray) -> np.ndarray:
@@ -45,6 +47,8 @@ def distances_matrix(sequences: list[str]) -> np.ndarray:
         return np.zeros((0, 0))
 
     sequence_length = len(sequences[0])
+    if sequence_length > MAX_SEQUENCE_LENGTH:
+        raise ValueError(f"Sequence length {sequence_length} exceeds maximum supported length {MAX_SEQUENCE_LENGTH}.")
     for sequence in sequences:
         assert len(sequence) == sequence_length
 
@@ -64,6 +68,8 @@ def write_distances_matrix_to_disk(sequences: list[str], output_path: str) -> No
         return
 
     sequence_length = len(sequences[0])
+    if sequence_length > MAX_SEQUENCE_LENGTH:
+        raise ValueError(f"Sequence length {sequence_length} exceeds maximum supported length {MAX_SEQUENCE_LENGTH}.")
     for sequence in sequences:
         assert len(sequence) == sequence_length
 
@@ -90,10 +96,13 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    with open(args.dataset, "r") as f:
-        sequences = [line.strip() for line in f if line.strip()]
-    write_distances_matrix_to_disk(sequences, args.output)
-    print(f"Wrote distance matrix to {args.output}")
+    try:
+        with open(args.dataset, "r") as f:
+            sequences = [line.strip() for line in f if line.strip()]
+        write_distances_matrix_to_disk(sequences, args.output)
+        print(f"Wrote distance matrix to {args.output}")
+    except ValueError as error:
+        raise SystemExit(str(error)) from error
 
 
 if __name__ == "__main__":
