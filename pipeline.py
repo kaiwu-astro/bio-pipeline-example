@@ -12,13 +12,7 @@ def _distances_matrix_kernel(encoded_sequences: np.ndarray) -> np.ndarray:
 
     for i in range(n):
         for j in range(n):
-            dist = 0
-            for k in range(sequence_length):
-                c1 = encoded_sequences[i, k]
-                c2 = encoded_sequences[j, k]
-                if c1 != gap and c2 != gap and c1 != c2:
-                    dist += 1
-            distances[i, j] = dist
+            distances[i, j] = _pairwise_distance(encoded_sequences, i, j, sequence_length, gap)
     return distances
 
 
@@ -29,14 +23,19 @@ def _distance_row_kernel(encoded_sequences: np.ndarray, i: int) -> np.ndarray:
     gap = ord("-")
 
     for j in range(n):
-        dist = 0
-        for k in range(sequence_length):
-            c1 = encoded_sequences[i, k]
-            c2 = encoded_sequences[j, k]
-            if c1 != gap and c2 != gap and c1 != c2:
-                dist += 1
-        distances[j] = dist
+        distances[j] = _pairwise_distance(encoded_sequences, i, j, sequence_length, gap)
     return distances
+
+
+@njit(cache=True)
+def _pairwise_distance(encoded_sequences: np.ndarray, i: int, j: int, sequence_length: int, gap: int) -> int:
+    dist = 0
+    for k in range(sequence_length):
+        c1 = encoded_sequences[i, k]
+        c2 = encoded_sequences[j, k]
+        if c1 != gap and c2 != gap and c1 != c2:
+            dist += 1
+    return dist
 
 
 def distances_matrix(sequences: list[str]) -> np.ndarray:
