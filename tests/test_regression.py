@@ -1,37 +1,41 @@
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 import unittest
 
 import numpy as np
 
-from pipeline import distances_matrix
+from pipeline import MAX_SEQUENCE_LENGTH, distances_matrix, write_distances_matrix_to_disk
 
 
 class RegressionTest(unittest.TestCase):
     def test_pipeline_regression_output(self):
         repo_root = Path(__file__).resolve().parents[1]
         dataset_path = repo_root / "example" / "dataset.txt"
-        result = subprocess.run(
-            [sys.executable, str(repo_root / "pipeline.py"), str(dataset_path)],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "distances.npy"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(repo_root / "pipeline.py"),
+                    str(dataset_path),
+                    "--output",
+                    str(output_path),
+                ],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
 
-        expected_output = (
-            "[[0. 2. 1. 0. 0. 0. 3. 1. 0. 2.]\n"
-            " [2. 0. 1. 2. 2. 2. 1. 1. 2. 4.]\n"
-            " [1. 1. 0. 1. 1. 1. 2. 0. 1. 3.]\n"
-            " [0. 2. 1. 0. 0. 0. 3. 1. 0. 2.]\n"
-            " [0. 2. 1. 0. 0. 0. 3. 1. 0. 2.]\n"
-            " [0. 2. 1. 0. 0. 0. 3. 1. 0. 2.]\n"
-            " [3. 1. 2. 3. 3. 3. 0. 2. 3. 5.]\n"
-            " [1. 1. 0. 1. 1. 1. 2. 0. 1. 3.]\n"
-            " [0. 2. 1. 0. 0. 0. 3. 1. 0. 2.]\n"
-            " [2. 4. 3. 2. 2. 2. 5. 3. 2. 0.]]\n"
-        )
-        self.assertEqual(result.stdout, expected_output)
+            expected_message = f"Wrote distance matrix to {output_path}\n"
+            self.assertEqual(result.stdout, expected_message)
+
+            matrix = np.load(output_path)
+            expected = distances_matrix(
+                [line.strip() for line in dataset_path.read_text().splitlines() if line.strip()]
+            ).astype(np.uint16)
+            np.testing.assert_array_equal(matrix, expected)
 
     def test_distances_matrix_gap_semantics(self):
         sequences = ["A-C", "ACC", "ATC"]
@@ -46,6 +50,50 @@ class RegressionTest(unittest.TestCase):
         )
         np.testing.assert_array_equal(result, expected)
         np.testing.assert_array_equal(result, result.T)
+
+    def test_write_distances_matrix_to_disk_gap_semantics(self):
+        sequences = ["A-C", "ACC", "ATC"]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "distances.npy"
+            write_distances_matrix_to_disk(sequences, str(output_path))
+            result = np.load(output_path)
+
+        expected = np.array(
+            [
+                [0, 0, 0],
+                [0, 0, 1],
+                [0, 1, 0],
+            ],
+            dtype=np.uint16,
+        )
+        np.testing.assert_array_equal(result, expected)
+        np.testing.assert_array_equal(result, result.T)
+
+    def test_pipeline_fails_when_sequence_too_long(self):
+        repo_root = Path(__file__).resolve().parents[1]
+        long_sequence = "A" * (MAX_SEQUENCE_LENGTH + 1)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            dataset_path = Path(tmpdir) / "too_long_dataset.txt"
+            dataset_path.write_text(f"{long_sequence}\n{long_sequence}\n")
+            output_path = Path(tmpdir) / "distances.npy"
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(repo_root / "pipeline.py"),
+                    str(dataset_path),
+                    "--output",
+                    str(output_path),
+                ],
+                capture_output=True,
+                text=True,
+            )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(
+            f"exceeds maximum supported length {MAX_SEQUENCE_LENGTH}",
+            result.stderr,
+        )
 
 
 if __name__ == "__main__":
