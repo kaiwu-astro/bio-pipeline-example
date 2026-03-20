@@ -57,7 +57,10 @@ def _pairwise_distance(encoded_sequences: np.ndarray, i: int, j: int, sequence_l
 
 
 def distances_matrix(sequences: list[str]) -> np.ndarray:
-    """Calculate the matrix of distances between each pair of lines."""
+    """
+    Calculate the matrix of distances between each pair of lines.
+    This function is memory-expensive and NOT used in production, but used (by import) in regression tests.
+    """
     n = len(sequences)
     if n == 0:
         return np.zeros((0, 0))
